@@ -1,7 +1,17 @@
 import React from "react";
 import "./App.css";
 import { auth, db } from "./firebase/init";
-import { collection, addDoc } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  getDoc,
+  doc,
+  query,
+  where,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -13,12 +23,50 @@ function App() {
   const [user, setUser] = React.useState({});
   const [loading, setLoading] = React.useState(true);
 
+  async function updatePost() {
+    const hardcodedId = "4pEEgrAQOuTm1rPZFfoP";
+    const postRef = doc(db, "posts", hardcodedId);
+    const post = await getPostById(hardcodedId);
+    const newPost = {
+      ...post,
+      title: "Land a $500k job",
+    };
+    updateDoc(postRef, newPost);
+  }
+
+  function deletePost() {
+    const hardcodedId = "4pEEgrAQOuTm1rPZFfoP";
+    const postRef = doc(db, "posts", hardcodedId);
+    deleteDoc(postRef);
+  }
+
   function createPost() {
     const post = {
-      title: "Land a $100k job",
-      description: "Finish Frontend Simplified",
+      title: "Finish Interview Section",
+      description: "Do Frontend Simplified",
+      uid: user.uid,
     };
     addDoc(collection(db, "posts"), post);
+  }
+
+  async function getAllPosts() {
+    const { docs } = await getDocs(collection(db, "posts"));
+    const posts = docs.map((elem) => ({ ...elem.data(), id: elem.id }));
+  }
+
+  async function getPostById(id) {
+    const postRef = doc(db, "posts", id);
+    const postSnap = await getDoc(postRef);
+    return postSnap.data();
+  }
+
+  async function getPostByUid() {
+    const postCollectionRef = await query(
+      collection(db, "posts"),
+      where("uid", "==", "1"),
+    );
+    const { docs } = await getDocs(postCollectionRef);
+    console.log(docs.map((doc) => doc.data()));
   }
 
   React.useEffect(() => {
@@ -63,6 +111,11 @@ function App() {
       <button onClick={logout}>Logout</button>
       {loading ? "loading..." : user.email}
       <button onClick={createPost}>Create Post</button>
+      <button onClick={getAllPosts}>Get All Posts</button>
+      <button onClick={getPostById}>Get Post By Id</button>
+      <button onClick={getPostByUid}>Get Post By Uid</button>
+      <button onClick={updatePost}>Update Post</button>
+      <button onClick={deletePost}>Delete Post</button>
     </div>
   );
 }
